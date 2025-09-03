@@ -17,8 +17,9 @@ export interface FileItem {
 }
 
 export interface ContentPart {
-  type: 'heading' | 'paragraph' | 'code' | 'list' | 'alert' | 'subtitle' | 'image' | 'twoColumn' | 'featureCard' | 'callout' | 'divider' | 'quiz' | 'fileStructure';
+  type: 'heading' | 'paragraph' | 'code' | 'list' | 'alert' | 'subtitle' | 'image' | 'twoColumn' | 'featureCard' | 'callout' | 'divider' | 'quiz' | 'fileStructure' | 'componentGrid';
   text?: string;
+  id?: string; // For anchor links to subtitles
   code?: string;
   language?: string;
   items?: (string | { text: string; subItems: string[] })[];
@@ -37,6 +38,11 @@ export interface ContentPart {
   }[];
   questions?: QuizQuestion[];
   files?: FileItem[];
+  componentGridItems?: {
+    id: string;
+    title: string;
+    icon: string;
+  }[];
 }
 
 export interface CurriculumTopic {

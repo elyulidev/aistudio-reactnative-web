@@ -4,13 +4,16 @@ import { CodeBlock } from './CodeBlock';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
     InfoIcon, WarningIcon, TipIcon, DevicePhoneMobileIcon, CodeBracketIcon, BoltIcon,
-    UsersIcon, AcademicCapIcon, FolderIcon, RectangleGroupIcon, ArrowRightIcon, FileIcon
+    UsersIcon, AcademicCapIcon, FolderIcon, RectangleGroupIcon, ArrowRightIcon, FileIcon,
+    DocumentTextIcon, PhotoIcon, Bars3BottomLeftIcon, ArrowsUpDownIcon, CursorArrowRaysIcon, PowerIcon, ListBulletIcon
 } from './Icons';
 
 // Map icon names from data to actual components
 const icons: IconMap = {
     DevicePhoneMobileIcon, CodeBracketIcon, BoltIcon, UsersIcon, 
-    AcademicCapIcon, FolderIcon, RectangleGroupIcon, ArrowRightIcon
+    AcademicCapIcon, FolderIcon, RectangleGroupIcon, ArrowRightIcon,
+    DocumentTextIcon, PhotoIcon, Bars3BottomLeftIcon, ArrowsUpDownIcon, 
+    CursorArrowRaysIcon, PowerIcon, ListBulletIcon
 };
 
 // --- Quiz Component ---
@@ -187,6 +190,28 @@ const FileStructure: React.FC<FileStructureProps> = ({ files }) => {
 };
 // --- End FileStructure Component ---
 
+// --- ComponentGrid Component ---
+const ComponentGrid: React.FC<{ items: {id: string; title: string; icon: string}[] }> = ({ items }) => {
+    return (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 my-6">
+            {items.map(item => {
+                const IconComponent = icons[item.icon];
+                return (
+                    <a
+                        key={item.id}
+                        href={`#${item.id}`}
+                        className="flex flex-col items-center justify-center text-center p-4 bg-slate-100 dark:bg-slate-800/50 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 hover:shadow-md transition-all duration-200 group"
+                    >
+                        {IconComponent && <IconComponent className="w-8 h-8 mb-2 text-slate-600 dark:text-slate-300 group-hover:text-primary-500 transition-colors" />}
+                        <span className="font-semibold text-sm text-slate-800 dark:text-slate-100">{item.title}</span>
+                    </a>
+                )
+            })}
+        </div>
+    )
+};
+// --- End ComponentGrid Component ---
+
 
 const Alert: React.FC<{ part: ContentPart }> = ({ part }) => {
     const alertStyles = {
@@ -225,7 +250,12 @@ const ContentPartRenderer: React.FC<{ part: ContentPart }> = ({ part }) => {
     case 'heading':
       return <h1 className="text-3xl font-extrabold mt-4 mb-4 text-slate-900 dark:text-white">{part.text}</h1>;
     case 'subtitle':
-        return <h2 className="text-2xl font-bold mt-8 mb-4 text-slate-800 dark:text-slate-100 border-b pb-2 border-slate-200 dark:border-slate-700">{part.text}</h2>;
+        const slug = part.id || part.text?.toLowerCase()
+          .replace(/<[^>]*>?/gm, '') // Remove HTML tags
+          .replace(/[^a-z0-9 -]/g, '') // Remove invalid chars
+          .replace(/\s+/g, '-') // Collapse whitespace and replace by -
+          .replace(/-+/g, '-'); // Collapse dashes
+        return <h2 id={slug} className="text-2xl font-bold mt-12 mb-4 text-slate-800 dark:text-slate-100 border-b pb-2 border-slate-200 dark:border-slate-700 scroll-mt-20">{part.text}</h2>;
     case 'paragraph':
       return <p className="mb-4 leading-relaxed text-slate-700 dark:text-slate-300">{part.text}</p>;
     case 'code':
@@ -302,6 +332,8 @@ const ContentPartRenderer: React.FC<{ part: ContentPart }> = ({ part }) => {
         return <hr className="my-8 border-slate-200 dark:border-slate-700" />;
     case 'fileStructure':
         return <FileStructure files={part.files || []} />;
+    case 'componentGrid':
+        return <ComponentGrid items={part.componentGridItems || []} />;
     case 'quiz':
         return <Quiz questions={part.questions || []} />;
     default:

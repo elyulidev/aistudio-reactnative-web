@@ -1,5 +1,5 @@
-import { esCurriculum } from './lang/es';
-import { ptCurriculum } from './lang/pt';
+import { esCurriculum } from './lang/es/index';
+import { ptCurriculum } from './lang/pt/index';
 
 export const translations = {
   es: {
