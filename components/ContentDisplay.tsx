@@ -5,7 +5,9 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { 
     InfoIcon, WarningIcon, TipIcon, DevicePhoneMobileIcon, CodeBracketIcon, BoltIcon,
     UsersIcon, AcademicCapIcon, FolderIcon, RectangleGroupIcon, ArrowRightIcon, FileIcon,
-    DocumentTextIcon, PhotoIcon, Bars3BottomLeftIcon, ArrowsUpDownIcon, CursorArrowRaysIcon, PowerIcon, ListBulletIcon
+    DocumentTextIcon, PhotoIcon, Bars3BottomLeftIcon, ArrowsUpDownIcon, CursorArrowRaysIcon, PowerIcon, ListBulletIcon,
+    // New Icons for Conf 4
+    ArrowPathIcon, ChatBubbleBottomCenterTextIcon, SparklesIcon, KeyIcon, LinkIcon, RectangleStackIcon, MagnifyingGlassPlusIcon, WindowIcon
 } from './Icons';
 
 // Map icon names from data to actual components
@@ -13,7 +15,9 @@ const icons: IconMap = {
     DevicePhoneMobileIcon, CodeBracketIcon, BoltIcon, UsersIcon, 
     AcademicCapIcon, FolderIcon, RectangleGroupIcon, ArrowRightIcon,
     DocumentTextIcon, PhotoIcon, Bars3BottomLeftIcon, ArrowsUpDownIcon, 
-    CursorArrowRaysIcon, PowerIcon, ListBulletIcon
+    CursorArrowRaysIcon, PowerIcon, ListBulletIcon,
+    // New Icons for Conf 4
+    ArrowPathIcon, ChatBubbleBottomCenterTextIcon, SparklesIcon, KeyIcon, LinkIcon, RectangleStackIcon, MagnifyingGlassPlusIcon, WindowIcon
 };
 
 // --- Quiz Component ---
