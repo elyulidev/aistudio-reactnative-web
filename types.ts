@@ -4,8 +4,20 @@ export interface IconMap {
   [key: string]: React.FC<React.SVGProps<SVGSVGElement>>;
 }
 
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: number; // index of the correct option
+}
+
+export interface FileItem {
+  id: string;
+  name: string;
+  description: string[];
+}
+
 export interface ContentPart {
-  type: 'heading' | 'paragraph' | 'code' | 'list' | 'alert' | 'subtitle' | 'image' | 'twoColumn' | 'featureCard' | 'callout' | 'divider';
+  type: 'heading' | 'paragraph' | 'code' | 'list' | 'alert' | 'subtitle' | 'image' | 'twoColumn' | 'featureCard' | 'callout' | 'divider' | 'quiz' | 'fileStructure';
   text?: string;
   code?: string;
   language?: string;
@@ -23,6 +35,8 @@ export interface ContentPart {
     title: string;
     text: string;
   }[];
+  questions?: QuizQuestion[];
+  files?: FileItem[];
 }
 
 export interface CurriculumTopic {
