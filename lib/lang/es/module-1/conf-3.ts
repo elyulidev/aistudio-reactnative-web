@@ -320,5 +320,32 @@ const styles = StyleSheet.create({
     header: { fontSize: 32, backgroundColor: '#fff' },
     title: { fontSize: 24 },
 });`},
+        { type: 'divider' },
+        { type: 'heading', text: '¡Pon a prueba tus conocimientos!' },
+        { 
+          type: 'quiz', 
+          questions: [
+            { 
+              "question": "¿Cuál es el componente más fundamental para agrupar otros componentes y aplicar estilos de layout en React Native?", 
+              "options": ["Text", "View", "StyleSheet", "Box"], 
+              "correctAnswer": 1 
+            },
+            { 
+              "question": "Para renderizar una lista larga de datos de manera eficiente, ¿qué componente deberías usar?", 
+              "options": ["ScrollView", "View", "FlatList", "SectionList"], 
+              "correctAnswer": 2 
+            },
+            { 
+              "question": "Si quieres que un texto o una imagen respondan a una pulsación del usuario, ¿qué componente es el más flexible y recomendado para envolverlos?", 
+              "options": ["Button", "TouchableOpacity", "View", "Pressable"], 
+              "correctAnswer": 3 
+            },
+            { 
+              "question": "¿Qué componente se utiliza para que el usuario pueda introducir texto?", 
+              "options": ["Text", "Input", "TextInput", "Form"], 
+              "correctAnswer": 2 
+            }
+          ]
+        }
     ]
 };

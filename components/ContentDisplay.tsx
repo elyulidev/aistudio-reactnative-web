@@ -192,19 +192,26 @@ const FileStructure: React.FC<FileStructureProps> = ({ files }) => {
 
 // --- ComponentGrid Component ---
 const ComponentGrid: React.FC<{ items: {id: string; title: string; icon: string}[] }> = ({ items }) => {
+    const handleScrollTo = (id: string) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 my-6">
             {items.map(item => {
                 const IconComponent = icons[item.icon];
                 return (
-                    <a
+                    <div
                         key={item.id}
-                        href={`#${item.id}`}
-                        className="flex flex-col items-center justify-center text-center p-4 bg-slate-100 dark:bg-slate-800/50 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 hover:shadow-md transition-all duration-200 group"
+                        onClick={() => handleScrollTo(item.id)}
+                        className="flex flex-col items-center justify-center text-center p-4 bg-slate-100 dark:bg-slate-800/50 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 hover:shadow-md transition-all duration-200 group cursor-pointer"
                     >
                         {IconComponent && <IconComponent className="w-8 h-8 mb-2 text-slate-600 dark:text-slate-300 group-hover:text-primary-500 transition-colors" />}
                         <span className="font-semibold text-sm text-slate-800 dark:text-slate-100">{item.title}</span>
-                    </a>
+                    </div>
                 )
             })}
         </div>
