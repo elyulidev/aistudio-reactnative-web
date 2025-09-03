@@ -1,0 +1,5 @@
+{
+  "name": "Bootcamp: React Native, Expo, SQLite y Drizzle ORM",
+  "description": "Una guía de estudio interactiva para el bootcamp de desarrollo móvil con React Native y Expo. Aprende sobre desarrollo local, persistencia de datos con SQLite y Drizzle ORM, consumo de APIs y más. Incluye un asistente de IA para resolver dudas.",
+  "requestFramePermissions": []
+}
