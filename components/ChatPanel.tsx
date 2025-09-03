@@ -1,9 +1,9 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Chat } from '@google/genai';
 import { createChatSession, sendMessageToAI } from '../services/geminiService';
 import type { ChatMessage } from '../types';
 import { SendIcon, CloseIcon, BotIcon } from './Icons';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ChatPanelProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ isOpen, onClose, topicCont
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [chatSession, setChatSession] = useState<Chat | null>(null);
+  const { language, t } = useLanguage();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -23,11 +24,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ isOpen, onClose, topicCont
     if (isOpen) {
         setMessages([{
             sender: 'ai',
-            text: `¡Hola! Soy tu asistente de IA. ¿Tienes alguna pregunta sobre "${topicContext}"?`
+            text: t('chatGreeting', { topicContext })
         }]);
-        setChatSession(createChatSession(topicContext));
+        setChatSession(createChatSession(topicContext, language));
     }
-  }, [isOpen, topicContext]);
+  }, [isOpen, topicContext, language, t]);
 
 
   useEffect(() => {
@@ -57,18 +58,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ isOpen, onClose, topicCont
       }
     } catch (error) {
       console.error("Error sending message to AI:", error);
-      setMessages(prev => [...prev, { sender: 'ai', text: 'Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo.' }]);
+      setMessages(prev => [...prev, { sender: 'ai', text: t('chatError') }]);
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, chatSession]);
+  }, [input, isLoading, chatSession, t]);
 
   if (!isOpen) return null;
 
   return (
     <aside className={`w-full sm:w-96 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
       <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Asistente IA</h3>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('chatTitle')}</h3>
         <button onClick={onClose} className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700">
           <CloseIcon className="w-6 h-6" />
         </button>
@@ -111,7 +112,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ isOpen, onClose, topicCont
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Haz una pregunta..."
+            placeholder={t('chatPlaceholder')}
             className="flex-1 w-full px-4 py-2 bg-slate-100 dark:bg-slate-800 border border-transparent rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
             disabled={isLoading}
           />

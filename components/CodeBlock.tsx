@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import { CopyIcon, CheckIcon } from './Icons';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface CodeBlockProps {
   code: string;
@@ -9,6 +9,7 @@ interface CodeBlockProps {
 
 export const CodeBlock: React.FC<CodeBlockProps> = ({ code, language }) => {
   const [copied, setCopied] = useState(false);
+  const { t } = useLanguage();
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code).then(() => {
@@ -28,12 +29,12 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ code, language }) => {
           {copied ? (
             <>
               <CheckIcon className="w-4 h-4 mr-1 text-green-400" />
-              Copiado
+              {t('copied')}
             </>
           ) : (
             <>
               <CopyIcon className="w-4 h-4 mr-1" />
-              Copiar
+              {t('copy')}
             </>
           )}
         </button>

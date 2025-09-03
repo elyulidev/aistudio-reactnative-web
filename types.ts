@@ -1,3 +1,5 @@
+export type Language = 'es' | 'pt';
+
 export interface IconMap {
   [key: string]: React.FC<React.SVGProps<SVGSVGElement>>;
 }

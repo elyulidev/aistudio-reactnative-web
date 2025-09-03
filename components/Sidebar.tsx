@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { CurriculumTopic, CurriculumModule } from '../types';
 import { ReactNativeIcon, ChevronDownIcon } from './Icons';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface SidebarProps {
   curriculum: {
@@ -13,6 +14,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ curriculum, selectedTopic, onTopicSelect }) => {
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   // Effect to expand the module containing the selected topic
   useEffect(() => {
@@ -42,8 +44,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ curriculum, selectedTopic, onT
       <div className="flex items-center space-x-3 mb-6">
         <ReactNativeIcon className="w-10 h-10 text-primary-500"/>
         <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Opcional I</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">React Native + Expo</p>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('sidebarTitle')}</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t('sidebarSubtitle')}</p>
         </div>
       </div>
       <nav className="space-y-1">
@@ -76,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ curriculum, selectedTopic, onT
                                     onClick={() => onTopicSelect(module.overview)}
                                     className={`${baseButtonClass} ${isTopicSelected(module.overview) ? selectedClass : unselectedClass}`}
                                 >
-                                    Resumen del Módulo
+                                    {t('moduleOverview')}
                                 </button>
                             </li>
                             {module.conferences.map(topic => (

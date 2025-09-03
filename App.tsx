@@ -1,15 +1,13 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ContentDisplay } from './components/ContentDisplay';
 import { Header } from './components/Header';
 import { ChatPanel } from './components/ChatPanel';
-import { CURRICULUM_DATA } from './constants';
-import type { CurriculumTopic } from './types';
+import { useLanguage } from './contexts/LanguageContext';
 import { MoonIcon, SunIcon } from './components/Icons';
 
 const App: React.FC = () => {
-  const [selectedTopic, setSelectedTopic] = useState<CurriculumTopic>(CURRICULUM_DATA.objetivoGeneral);
+  const { curriculum, selectedTopic, handleTopicSelect } = useLanguage();
   const [isChatPanelOpen, setChatPanelOpen] = useState<boolean>(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -36,15 +34,16 @@ const App: React.FC = () => {
   const toggleTheme = useCallback(() => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
   }, []);
-  
-  const handleTopicSelect = useCallback((topic: CurriculumTopic) => {
-      setSelectedTopic(topic);
-  }, []);
+
+  if (!curriculum || !selectedTopic) {
+    // Render a loading state or null while the language context is initializing
+    return null;
+  }
 
   return (
     <div className="flex h-screen font-sans text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-950">
       <Sidebar 
-        curriculum={CURRICULUM_DATA} 
+        curriculum={curriculum} 
         selectedTopic={selectedTopic} 
         onTopicSelect={handleTopicSelect} 
       />

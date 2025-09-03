@@ -1,25 +1,27 @@
-
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
+import type { Language } from '../types';
 
 const API_KEY = process.env.API_KEY;
 
 if (!API_KEY) {
-  // In a real app, you might show an error to the user or disable AI features.
-  // For this example, we'll throw an error if the key is missing.
-  // This helps identify configuration issues early.
   console.error("API_KEY is not set in environment variables.");
 }
 
 const ai = new GoogleGenAI({ apiKey: API_KEY! });
 
-export const createChatSession = (topicContext: string): Chat => {
+const systemInstructions = {
+  es: `Eres un asistente experto y amigable para estudiantes universitarios que aprenden a programar con React Native y Expo. Tu objetivo es explicar conceptos de forma clara y concisa. Responde siempre en español. No uses markdown en tus respuestas.`,
+  pt: `Você é um assistente especialista e amigável para estudantes universitários que estão aprendendo a programar com React Native e Expo. Seu objetivo é explicar conceitos de forma clara e concisa. Responda sempre em português. Não use markdown em suas respostas.`
+};
+
+export const createChatSession = (topicContext: string, language: Language): Chat => {
   const model = 'gemini-2.5-flash';
+  const baseInstruction = systemInstructions[language];
+  
   const chat = ai.chats.create({
     model: model,
     config: {
-      systemInstruction: `Eres un asistente experto y amigable para estudiantes universitarios que aprenden a programar con React Native y Expo. Tu objetivo es explicar conceptos de forma clara y concisa. 
-      Contexto actual del estudiante: ${topicContext}. 
-      Responde siempre en español. No uses markdown en tus respuestas.`,
+      systemInstruction: `${baseInstruction} Contexto actual del estudiante: ${topicContext}.`,
     },
   });
   return chat;
