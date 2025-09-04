@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
         { type: 'paragraph', text: 'Fornece uma interface para interagir com links de aplicações, tanto de entrada como de saída. Pode ser usado para abrir URLs num navegador web, enviar e-mails, abrir mapas ou fazer uma chamada telefónica.' },
         { type: 'code', language: 'jsx', code: `
 import React from 'react';
-import { Button, Linking, View, StyleSheet } from 'react-native';
+import { Button, Linking, View, StyleSheet, Alert } from 'react-native';
 
 export default function LinkingExample() {
     const openURL = async () => {

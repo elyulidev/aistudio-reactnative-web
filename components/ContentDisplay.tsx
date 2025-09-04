@@ -280,60 +280,71 @@ const Assignment: React.FC<AssignmentProps> = ({ assignmentId, description, init
         const { data, error } = await saveAssignmentSubmission(submission);
         if (error) {
             console.error("Error saving submission:", error);
-            // Here you could set an error state to show the user
         } else if(data) {
             setExistingSubmission(data);
         }
         setIsSubmitting(false);
     };
 
-    if (loading) return <SpinnerContainer />;
-
-    if (!user) {
-        return <LoginPrompt onLoginRequest={onLoginRequest} title={t('loginToSubmitAssignmentTitle')} body={t('loginToSubmitAssignmentBody')} />;
-    }
-
-    if (existingSubmission) {
-        return (
-            <InteractiveContentContainer>
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('assignmentCompleted')}</h3>
-                <p className="text-slate-600 dark:text-slate-300 mb-4">
-                    {t('assignmentSubmittedOn', { date: new Date(existingSubmission.created_at!).toLocaleString() })}
-                </p>
-                <h4 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mt-6 mb-2">{t('yourSubmission')}</h4>
-                <CodeBlock code={existingSubmission.content || ''} language="jsx" />
-            </InteractiveContentContainer>
-        );
-    }
-    
     return (
         <InteractiveContentContainer>
+            {/* Assignment details are always visible */}
             <div className="space-y-3 mb-4">
                 {description.map((p, index) => (
                     <p key={index} className="text-slate-600 dark:text-slate-300 leading-relaxed">{p}</p>
                 ))}
             </div>
             {initialCode && <CodeBlock code={initialCode} language="jsx" />}
-            <form onSubmit={handleSubmit} className="mt-6">
-                <textarea
-                    value={solution}
-                    onChange={(e) => setSolution(e.target.value)}
-                    placeholder={t('pasteYourCodeHere')}
-                    rows={15}
-                    className="w-full p-4 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-primary-500 focus:border-primary-500 font-mono text-sm"
-                    required
-                />
-                <div className="mt-4 flex justify-end">
-                    <button
-                        type="submit"
-                        disabled={isSubmitting || !solution.trim()}
-                        className="px-6 py-2 bg-primary-500 text-white font-semibold rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-800 flex items-center"
-                    >
-                        {isSubmitting && <Spinner />}
-                        <span className={isSubmitting ? 'ml-2' : ''}>{t('submitAssignment')}</span>
-                    </button>
-                </div>
-            </form>
+
+            {/* Submission area is conditional */}
+            <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+                {loading ? (
+                    <div className="flex justify-center items-center h-48">
+                        <Spinner />
+                    </div>
+                ) : !user ? (
+                    <div className="text-center">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{t('loginToSubmitAssignmentTitle')}</h3>
+                        <p className="text-slate-600 dark:text-slate-300 mb-6">{t('loginToSubmitAssignmentBody')}</p>
+                        <button 
+                            onClick={onLoginRequest} 
+                            className="px-6 py-2 bg-primary-500 text-white font-semibold rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-800"
+                        >
+                            {t('login')}
+                        </button>
+                    </div>
+                ) : existingSubmission ? (
+                    <div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{t('assignmentCompleted')}</h3>
+                        <p className="text-slate-600 dark:text-slate-300 mb-4">
+                            {t('assignmentSubmittedOn', { date: new Date(existingSubmission.created_at!).toLocaleString() })}
+                        </p>
+                        <h4 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mt-4 mb-2">{t('yourSubmission')}</h4>
+                        <CodeBlock code={existingSubmission.content || ''} language="jsx" />
+                    </div>
+                ) : (
+                    <form onSubmit={handleSubmit}>
+                        <textarea
+                            value={solution}
+                            onChange={(e) => setSolution(e.target.value)}
+                            placeholder={t('pasteYourCodeHere')}
+                            rows={15}
+                            className="w-full p-4 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-primary-500 focus:border-primary-500 font-mono text-sm"
+                            required
+                        />
+                        <div className="mt-4 flex justify-end">
+                            <button
+                                type="submit"
+                                disabled={isSubmitting || !solution.trim()}
+                                className="px-6 py-2 bg-primary-500 text-white font-semibold rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-800 flex items-center"
+                            >
+                                {isSubmitting && <Spinner />}
+                                <span className={isSubmitting ? 'ml-2' : ''}>{t('submitAssignment')}</span>
+                            </button>
+                        </div>
+                    </form>
+                )}
+            </div>
         </InteractiveContentContainer>
     );
 };
@@ -481,7 +492,7 @@ const ContentPartRenderer: React.FC<{ part: ContentPart, topic: CurriculumTopic,
         <ul className="list-disc list-inside mb-4 pl-4 space-y-2 text-slate-700 dark:text-slate-300">
           {part.items?.map((item, index) => {
             const itemText = typeof item === 'string' ? item : item.text;
-            const subItems = typeof item !== 'string' ? item.subItems : [];
+            const subItems = (typeof item !== 'string' && item.subItems) ? item.subItems : [];
             const segments = itemText.split('**');
             return (
                 <li key={index}>
