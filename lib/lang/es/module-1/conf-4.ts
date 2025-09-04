@@ -244,9 +244,10 @@ const styles = StyleSheet.create({ container: { flex: 1, alignItems: 'center', p
 
         { type: 'subtitle', id: 'statusbar', text: 'StatusBar' },
         { type: 'paragraph', text: 'Permite controlar la barra de estado de la aplicación. Puedes cambiar el color del texto (claro u oscuro), el color de fondo e incluso ocultarla. Es clave para integrar tu aplicación con el aspecto del sistema operativo.' },
+        // FIX: Added 'Text' to import in StatusBarExample code snippet below.
         { type: 'code', language: 'jsx', code: `
 import React, { useState } from 'react';
-import { View, StatusBar, Button, StyleSheet, Platform } from 'react-native';
+import { View, StatusBar, Button, StyleSheet, Platform, Text } from 'react-native';
 
 export default function StatusBarExample() {
   const STYLES = ['default', 'dark-content', 'light-content'];

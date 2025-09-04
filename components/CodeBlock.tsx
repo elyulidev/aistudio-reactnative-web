@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { CopyIcon, CheckIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -18,30 +20,53 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ code, language }) => {
     });
   };
 
+  const languageMap: { [key: string]: string | undefined } = {
+      'jsx': 'javascript',
+      'tsx': 'typescript',
+      'bash': 'shell',
+  };
+  const highlighterLanguage = languageMap[language] || language;
+
   return (
-    <div className="bg-slate-800 dark:bg-black/50 rounded-lg my-6 overflow-hidden">
-      <div className="flex justify-between items-center px-4 py-2 bg-slate-700 dark:bg-slate-900/80">
-        <span className="text-xs font-sans text-slate-400 uppercase">{language}</span>
-        <button
-          onClick={handleCopy}
-          className="flex items-center text-xs text-slate-400 hover:text-white transition-colors"
+    <div className="my-6 rounded-lg overflow-hidden shadow-lg border border-slate-700/50">
+        <div className="flex justify-between items-center px-4 py-2 bg-slate-700 dark:bg-slate-800">
+            <span className="text-xs font-sans text-slate-300 uppercase">{language}</span>
+            <button
+                onClick={handleCopy}
+                className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition-colors"
+            >
+                {copied ? (
+                    <>
+                        <CheckIcon className="w-4 h-4 text-green-400" />
+                        {t('copied')}
+                    </>
+                ) : (
+                    <>
+                        <CopyIcon className="w-4 h-4" />
+                        {t('copy')}
+                    </>
+                )}
+            </button>
+        </div>
+        <SyntaxHighlighter
+            language={highlighterLanguage}
+            style={vscDarkPlus}
+            customStyle={{ 
+                margin: 0,
+                borderBottomLeftRadius: '0.5rem',
+                borderBottomRightRadius: '0.5rem',
+                padding: '1rem',
+            }}
+            codeTagProps={{
+                style: {
+                    fontFamily: "'Fira Code', monospace",
+                    fontSize: '14px',
+                }
+            }}
+            showLineNumbers
         >
-          {copied ? (
-            <>
-              <CheckIcon className="w-4 h-4 mr-1 text-green-400" />
-              {t('copied')}
-            </>
-          ) : (
-            <>
-              <CopyIcon className="w-4 h-4 mr-1" />
-              {t('copy')}
-            </>
-          )}
-        </button>
-      </div>
-      <pre className="p-4 text-sm overflow-x-auto">
-        <code className="font-mono text-slate-200">{code.trim()}</code>
-      </pre>
+            {code.trim()}
+        </SyntaxHighlighter>
     </div>
   );
 };

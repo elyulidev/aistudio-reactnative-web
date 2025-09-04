@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { CurriculumTopic, CurriculumModule } from '../types';
-import { ReactNativeIcon, ChevronDownIcon } from './Icons';
+import { ReactNativeIcon, ChevronDownIcon, CloseIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface SidebarProps {
@@ -10,9 +10,11 @@ interface SidebarProps {
   };
   selectedTopic: CurriculumTopic;
   onTopicSelect: (topic: CurriculumTopic) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ curriculum, selectedTopic, onTopicSelect }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ curriculum, selectedTopic, onTopicSelect, isOpen, onClose }) => {
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const { t } = useLanguage();
 
@@ -40,15 +42,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ curriculum, selectedTopic, onT
   const unselectedClass = "text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800";
 
   return (
-    <aside className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900 p-4 border-r border-slate-200 dark:border-slate-800 overflow-y-auto hidden md:block">
-      <div className="flex items-center space-x-3 mb-6">
-        <ReactNativeIcon className="w-10 h-10 text-primary-500"/>
-        <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('sidebarTitle')}</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{t('sidebarSubtitle')}</p>
+    <aside className={`w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900 p-4 border-r border-slate-200 dark:border-slate-800 flex flex-col fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <ReactNativeIcon className="w-10 h-10 text-primary-500"/>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('sidebarTitle')}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t('sidebarSubtitle')}</p>
+          </div>
         </div>
+        <button 
+          onClick={onClose} 
+          className="md:hidden p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+          aria-label="Close menu"
+        >
+          <CloseIcon className="w-6 h-6" />
+        </button>
       </div>
-      <nav className="space-y-1">
+      <nav className="space-y-1 flex-1 overflow-y-auto">
         <button
             onClick={() => onTopicSelect(curriculum.objetivoGeneral)}
             className={`${baseButtonClass} ${isTopicSelected(curriculum.objetivoGeneral) ? selectedClass : unselectedClass}`}

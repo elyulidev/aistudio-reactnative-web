@@ -1,7 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import type { CurriculumTopic, ContentPart, IconMap, QuizQuestion, FileItem } from '../types';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import type { CurriculumTopic, ContentPart, IconMap, QuizQuestion, FileItem, QuizAttempt, AssignmentSubmission } from '../types';
 import { CodeBlock } from './CodeBlock';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { saveQuizAttempt, getQuizAttemptForUser, saveAssignmentSubmission, getAssignmentSubmissionForUser } from '../services/supabase';
+import { Spinner } from './Spinner';
 import { 
     InfoIcon, WarningIcon, TipIcon, DevicePhoneMobileIcon, CodeBracketIcon, BoltIcon,
     UsersIcon, AcademicCapIcon, FolderIcon, RectangleGroupIcon, ArrowRightIcon, FileIcon,
@@ -20,19 +23,105 @@ const icons: IconMap = {
     ArrowPathIcon, ChatBubbleBottomCenterTextIcon, SparklesIcon, KeyIcon, LinkIcon, RectangleStackIcon, MagnifyingGlassPlusIcon, WindowIcon
 };
 
+// --- Base Container Component ---
+const InteractiveContentContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="my-8 p-6 bg-slate-100 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+      {children}
+    </div>
+);
+
+// --- Spinner Container ---
+const SpinnerContainer: React.FC = () => (
+    <InteractiveContentContainer>
+      <div className="flex justify-center items-center h-48">
+        <Spinner />
+      </div>
+    </InteractiveContentContainer>
+);
+
+// --- Login Prompt Component ---
+const LoginPrompt: React.FC<{ onLoginRequest: () => void, title: string, body: string }> = ({ onLoginRequest, title, body }) => {
+    const { t } = useLanguage();
+    return (
+        <InteractiveContentContainer>
+            <div className="text-center">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{title}</h3>
+                <p className="text-slate-600 dark:text-slate-300 mb-6">{body}</p>
+                <button 
+                    onClick={onLoginRequest} 
+                    className="px-6 py-2 bg-primary-500 text-white font-semibold rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-800"
+                >
+                    {t('login')}
+                </button>
+            </div>
+        </InteractiveContentContainer>
+    );
+};
+
+
 // --- Quiz Component ---
 interface QuizProps {
   questions: QuizQuestion[];
+  quizId: string;
+  onLoginRequest: () => void;
 }
 
-const Quiz: React.FC<QuizProps> = ({ questions }) => {
+const Quiz: React.FC<QuizProps> = ({ questions, quizId, onLoginRequest }) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  
+  const [loadingAttempt, setLoadingAttempt] = useState(true);
+  const [existingAttempt, setExistingAttempt] = useState<QuizAttempt | null>(null);
+  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number | null>>({});
   const [quizFinished, setQuizFinished] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
+
+  useEffect(() => {
+    const fetchAttempt = async () => {
+      if (!user) {
+        setLoadingAttempt(false);
+        return;
+      }
+      setLoadingAttempt(true);
+      const { data, error } = await getQuizAttemptForUser(user.id, quizId);
+      if (error) {
+        console.error('Error fetching quiz attempt:', error);
+      } else {
+        setExistingAttempt(data);
+      }
+      setLoadingAttempt(false);
+    };
+
+    fetchAttempt();
+  }, [user, quizId]);
+
+
+  const handleSaveAttempt = useCallback(async (finalScore: number, finalAnswers: Record<number, number | null>) => {
+    if (!user) return;
+    
+    setIsSaving(true);
+    const DEMO_COURSE_ID = 'e9e0755e-013d-4c3e-a83d-8a6526a0c444';
+
+    const attempt: QuizAttempt = {
+        user_id: user.id,
+        quiz_id: quizId,
+        score: finalScore,
+        answers: finalAnswers,
+        course_id: DEMO_COURSE_ID,
+    };
+    
+    const { data, error } = await saveQuizAttempt(attempt);
+    if (error) {
+        console.error('Error saving quiz attempt:', error);
+    } else if (data) {
+        setExistingAttempt(data);
+    }
+    setIsSaving(false);
+  }, [user, quizId]);
   
   const handleAnswerSelect = (optionIndex: number) => {
     setSelectedAnswers(prev => ({
@@ -50,7 +139,7 @@ const Quiz: React.FC<QuizProps> = ({ questions }) => {
   };
   
   const score = useMemo(() => {
-    if (!quizFinished) return 0;
+    if (questions.length === 0) return 0;
     const correctAnswers = questions.reduce((count, question, index) => {
       if (selectedAnswers[index] === question.correctAnswer) {
         return count + 1;
@@ -58,81 +147,197 @@ const Quiz: React.FC<QuizProps> = ({ questions }) => {
       return count;
     }, 0);
     return Math.round((correctAnswers / totalQuestions) * 100);
-  }, [quizFinished, questions, selectedAnswers, totalQuestions]);
+  }, [questions, selectedAnswers, totalQuestions]);
 
-  const handleReset = () => {
-    setCurrentQuestionIndex(0);
-    setSelectedAnswers({});
-    setQuizFinished(false);
-  };
+  useEffect(() => {
+    if (quizFinished && !isSaving) {
+        handleSaveAttempt(score, selectedAnswers);
+    }
+  }, [quizFinished, score, selectedAnswers, handleSaveAttempt, isSaving]);
 
   if (totalQuestions === 0) return null;
 
-  const progress = ((quizFinished ? totalQuestions : currentQuestionIndex + 1) / totalQuestions) * 100;
+  const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
   
-  return (
-    <div className="my-8 p-6 bg-slate-100 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
-      {quizFinished ? (
+  if (loadingAttempt) {
+    return <SpinnerContainer />;
+  }
+  
+  if (!user) {
+    return <LoginPrompt onLoginRequest={onLoginRequest} title={t('loginToTakeQuizTitle')} body={t('loginToTakeQuizBody')} />;
+  }
+
+  if (existingAttempt) {
+    return (
+      <InteractiveContentContainer>
         <div className="text-center">
-          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('quizYourScore')}</h3>
-          <p className="text-5xl font-extrabold text-primary-500 mb-4">{score}%</p>
-          <p className="text-slate-600 dark:text-slate-300 mb-6">{t('quizScore', { score: String(score) })}</p>
+          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('quizCompleted')}</h3>
+          <p className="text-5xl font-extrabold text-primary-500 mb-4">{existingAttempt.score}%</p>
+          <p className="text-slate-600 dark:text-slate-300">{t('yourSavedScore')}</p>
+        </div>
+      </InteractiveContentContainer>
+    );
+  }
+
+  if (quizFinished) {
+    return <SpinnerContainer />;
+  }
+
+  return (
+    <InteractiveContentContainer>
+      <>
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="font-semibold text-slate-800 dark:text-slate-100">
+              {t('quizQuestion', { current: String(currentQuestionIndex + 1), total: String(totalQuestions) })}
+            </h4>
+          </div>
+          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+            <div className="bg-primary-500 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.3s ease-in-out' }}></div>
+          </div>
+        </div>
+        
+        <p className="text-lg font-medium text-slate-900 dark:text-white my-4">{questions[currentQuestionIndex].question}</p>
+        
+        <div className="space-y-3">
+          {questions[currentQuestionIndex].options.map((option, index) => {
+            const isSelected = selectedAnswers[currentQuestionIndex] === index;
+            return (
+              <button
+                key={index}
+                onClick={() => handleAnswerSelect(index)}
+                className={`w-full text-left p-4 rounded-lg border-2 transition-colors duration-200 ${
+                  isSelected
+                    ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-500'
+                    : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 hover:border-primary-400'
+                }`}
+              >
+                <span className={`font-medium ${isSelected ? 'text-primary-700 dark:text-primary-300' : 'text-slate-800 dark:text-slate-200'}`}>{option}</span>
+              </button>
+            );
+          })}
+        </div>
+        
+        <div className="mt-6 flex justify-end">
           <button
-            onClick={handleReset}
-            className="px-6 py-2 bg-primary-500 text-white font-semibold rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-800"
+            onClick={handleNext}
+            disabled={selectedAnswers[currentQuestionIndex] === undefined || selectedAnswers[currentQuestionIndex] === null}
+            className="px-6 py-2 bg-primary-500 text-white font-semibold rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-800"
           >
-            {t('quizTryAgain')}
+            {currentQuestionIndex < totalQuestions - 1 ? t('quizNext') : t('quizSubmit')}
           </button>
         </div>
-      ) : (
-        <>
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="font-semibold text-slate-800 dark:text-slate-100">
-                {t('quizQuestion', { current: String(currentQuestionIndex + 1), total: String(totalQuestions) })}
-              </h4>
-            </div>
-            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
-              <div className="bg-primary-500 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.3s ease-in-out' }}></div>
-            </div>
-          </div>
-          
-          <p className="text-lg font-medium text-slate-900 dark:text-white my-4">{currentQuestion.question}</p>
-          
-          <div className="space-y-3">
-            {currentQuestion.options.map((option, index) => {
-              const isSelected = selectedAnswers[currentQuestionIndex] === index;
-              return (
-                <button
-                  key={index}
-                  onClick={() => handleAnswerSelect(index)}
-                  className={`w-full text-left p-4 rounded-lg border-2 transition-colors duration-200 ${
-                    isSelected
-                      ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-500'
-                      : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 hover:border-primary-400'
-                  }`}
-                >
-                  <span className={`font-medium ${isSelected ? 'text-primary-700 dark:text-primary-300' : 'text-slate-800 dark:text-slate-200'}`}>{option}</span>
-                </button>
-              );
-            })}
-          </div>
-          
-          <div className="mt-6 flex justify-end">
-            <button
-              onClick={handleNext}
-              disabled={selectedAnswers[currentQuestionIndex] === undefined || selectedAnswers[currentQuestionIndex] === null}
-              className="px-6 py-2 bg-primary-500 text-white font-semibold rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-800"
-            >
-              {currentQuestionIndex < totalQuestions - 1 ? t('quizNext') : t('quizSubmit')}
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+      </>
+    </InteractiveContentContainer>
   );
 };
 // --- End Quiz Component ---
+
+// --- Assignment Component ---
+interface AssignmentProps {
+  assignmentId: string;
+  description: string[];
+  initialCode?: string;
+  onLoginRequest: () => void;
+}
+
+const Assignment: React.FC<AssignmentProps> = ({ assignmentId, description, initialCode, onLoginRequest }) => {
+    const { t } = useLanguage();
+    const { user } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [existingSubmission, setExistingSubmission] = useState<AssignmentSubmission | null>(null);
+    const [solution, setSolution] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        const fetchSubmission = async () => {
+            if (!user) {
+                setLoading(false);
+                return;
+            }
+            setLoading(true);
+            const { data, error } = await getAssignmentSubmissionForUser(user.id, assignmentId);
+            if (error) {
+                console.error('Error fetching submission:', error);
+            } else {
+                setExistingSubmission(data);
+            }
+            setLoading(false);
+        };
+        fetchSubmission();
+    }, [user, assignmentId]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user || !solution.trim()) return;
+
+        setIsSubmitting(true);
+        const submission: AssignmentSubmission = {
+            user_id: user.id,
+            assignment_id: assignmentId,
+            content: solution,
+        };
+        const { data, error } = await saveAssignmentSubmission(submission);
+        if (error) {
+            console.error("Error saving submission:", error);
+            // Here you could set an error state to show the user
+        } else if(data) {
+            setExistingSubmission(data);
+        }
+        setIsSubmitting(false);
+    };
+
+    if (loading) return <SpinnerContainer />;
+
+    if (!user) {
+        return <LoginPrompt onLoginRequest={onLoginRequest} title={t('loginToSubmitAssignmentTitle')} body={t('loginToSubmitAssignmentBody')} />;
+    }
+
+    if (existingSubmission) {
+        return (
+            <InteractiveContentContainer>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('assignmentCompleted')}</h3>
+                <p className="text-slate-600 dark:text-slate-300 mb-4">
+                    {t('assignmentSubmittedOn', { date: new Date(existingSubmission.created_at!).toLocaleString() })}
+                </p>
+                <h4 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mt-6 mb-2">{t('yourSubmission')}</h4>
+                <CodeBlock code={existingSubmission.content || ''} language="jsx" />
+            </InteractiveContentContainer>
+        );
+    }
+    
+    return (
+        <InteractiveContentContainer>
+            <div className="space-y-3 mb-4">
+                {description.map((p, index) => (
+                    <p key={index} className="text-slate-600 dark:text-slate-300 leading-relaxed">{p}</p>
+                ))}
+            </div>
+            {initialCode && <CodeBlock code={initialCode} language="jsx" />}
+            <form onSubmit={handleSubmit} className="mt-6">
+                <textarea
+                    value={solution}
+                    onChange={(e) => setSolution(e.target.value)}
+                    placeholder={t('pasteYourCodeHere')}
+                    rows={15}
+                    className="w-full p-4 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-primary-500 focus:border-primary-500 font-mono text-sm"
+                    required
+                />
+                <div className="mt-4 flex justify-end">
+                    <button
+                        type="submit"
+                        disabled={isSubmitting || !solution.trim()}
+                        className="px-6 py-2 bg-primary-500 text-white font-semibold rounded-lg disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-800 flex items-center"
+                    >
+                        {isSubmitting && <Spinner />}
+                        <span className={isSubmitting ? 'ml-2' : ''}>{t('submitAssignment')}</span>
+                    </button>
+                </div>
+            </form>
+        </InteractiveContentContainer>
+    );
+};
+// --- End Assignment Component ---
 
 // --- FileStructure Component ---
 interface FileStructureProps {
@@ -256,7 +461,7 @@ const Alert: React.FC<{ part: ContentPart }> = ({ part }) => {
     );
 };
 
-const ContentPartRenderer: React.FC<{ part: ContentPart }> = ({ part }) => {
+const ContentPartRenderer: React.FC<{ part: ContentPart, topic: CurriculumTopic, partIndex: number, onLoginRequest: () => void }> = ({ part, topic, partIndex, onLoginRequest }) => {
   switch (part.type) {
     case 'heading':
       return <h1 className="text-3xl font-extrabold mt-4 mb-4 text-slate-900 dark:text-white">{part.text}</h1>;
@@ -346,7 +551,14 @@ const ContentPartRenderer: React.FC<{ part: ContentPart }> = ({ part }) => {
     case 'componentGrid':
         return <ComponentGrid items={part.componentGridItems || []} />;
     case 'quiz':
-        return <Quiz questions={part.questions || []} />;
+        return <Quiz questions={part.questions || []} quizId={`${topic.id}-${partIndex}`} onLoginRequest={onLoginRequest} />;
+    case 'assignment':
+        return <Assignment 
+                    assignmentId={part.assignmentId || `${topic.id}-${partIndex}`}
+                    description={part.description || []}
+                    initialCode={part.code}
+                    onLoginRequest={onLoginRequest} 
+                />;
     default:
       return null;
   }
@@ -354,13 +566,14 @@ const ContentPartRenderer: React.FC<{ part: ContentPart }> = ({ part }) => {
 
 interface ContentDisplayProps {
   topic: CurriculumTopic;
+  onLoginRequest: () => void;
 }
 
-export const ContentDisplay: React.FC<ContentDisplayProps> = ({ topic }) => {
+export const ContentDisplay: React.FC<ContentDisplayProps> = ({ topic, onLoginRequest }) => {
   return (
     <article className="max-w-4xl mx-auto">
       {topic.content.map((part, index) => (
-        <ContentPartRenderer key={index} part={part} />
+        <ContentPartRenderer key={index} part={part} topic={topic} partIndex={index} onLoginRequest={onLoginRequest} />
       ))}
     </article>
   );

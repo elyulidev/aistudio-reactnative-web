@@ -1,3 +1,6 @@
+// FIX: Changed import for Session and User to '@supabase/gotrue-js' to resolve module export errors.
+import type { Session, User } from '@supabase/gotrue-js';
+
 export type Language = 'es' | 'pt';
 
 export interface IconMap {
@@ -17,7 +20,7 @@ export interface FileItem {
 }
 
 export interface ContentPart {
-  type: 'heading' | 'paragraph' | 'code' | 'list' | 'alert' | 'subtitle' | 'image' | 'twoColumn' | 'featureCard' | 'callout' | 'divider' | 'quiz' | 'fileStructure' | 'componentGrid';
+  type: 'heading' | 'paragraph' | 'code' | 'list' | 'alert' | 'subtitle' | 'image' | 'twoColumn' | 'featureCard' | 'callout' | 'divider' | 'quiz' | 'fileStructure' | 'componentGrid' | 'assignment';
   text?: string;
   id?: string; // For anchor links to subtitles
   code?: string;
@@ -43,6 +46,9 @@ export interface ContentPart {
     title: string;
     icon: string;
   }[];
+  // Assignment properties
+  assignmentId?: string;
+  description?: string[];
 }
 
 export interface CurriculumTopic {
@@ -61,4 +67,32 @@ export interface CurriculumModule {
 export interface ChatMessage {
     sender: 'user' | 'ai';
     text: string;
+}
+
+// Auth & DB Types
+export type { Session, User };
+
+export interface Course {
+    id: string;
+    name: string;
+}
+
+export interface QuizAttempt {
+    id?: string;
+    user_id: string;
+    course_id: string;
+    quiz_id: string;
+    score: number;
+    answers: Record<number, number | null>;
+    created_at?: string;
+    profiles?: { email: string } | null;
+    courses?: { name: string } | null;
+}
+
+export interface AssignmentSubmission {
+    id?: string;
+    user_id: string;
+    assignment_id: string;
+    content: string | null;
+    created_at?: string;
 }
