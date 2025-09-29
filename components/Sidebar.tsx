@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import type { CurriculumTopic, CurriculumModule } from '../types';
-import { ReactNativeIcon, ChevronDownIcon, CloseIcon } from './Icons';
+import { ReactNativeIcon, ChevronDownIcon, CloseIcon, DocumentChartBarIcon, BookOpenIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface SidebarProps {
   curriculum: {
     objetivoGeneral: CurriculumTopic;
     modules: CurriculumModule[];
+    evaluations: CurriculumTopic;
+    bibliography: CurriculumTopic;
   };
   selectedTopic: CurriculumTopic;
   onTopicSelect: (topic: CurriculumTopic) => void;
@@ -20,6 +22,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ curriculum, selectedTopic, onT
 
   // Effect to expand the module containing the selected topic
   useEffect(() => {
+    if (selectedTopic.id === curriculum.evaluations.id || selectedTopic.id === curriculum.bibliography.id) {
+        setExpandedModule(null);
+        return;
+    }
     const parentModule = curriculum.modules.find(m => 
         m.overview.id === selectedTopic.id || 
         m.conferences.some(c => c.id === selectedTopic.id)
@@ -29,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ curriculum, selectedTopic, onT
     } else {
         setExpandedModule(null); // Collapse all if topic (like 'Objetivo General') has no parent
     }
-  }, [selectedTopic, curriculum.modules]);
+  }, [selectedTopic, curriculum]);
 
   const toggleModule = (moduleId: string) => {
     setExpandedModule(prev => (prev === moduleId ? null : moduleId));
@@ -51,62 +57,66 @@ export const Sidebar: React.FC<SidebarProps> = ({ curriculum, selectedTopic, onT
             <p className="text-sm text-slate-500 dark:text-slate-400">{t('sidebarSubtitle')}</p>
           </div>
         </div>
-        <button 
-          onClick={onClose} 
-          className="md:hidden p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-          aria-label="Close menu"
-        >
-          <CloseIcon className="w-6 h-6" />
+        <button onClick={onClose} className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 md:hidden">
+            <CloseIcon className="w-6 h-6" />
         </button>
       </div>
-      <nav className="space-y-1 flex-1 overflow-y-auto">
-        <button
-            onClick={() => onTopicSelect(curriculum.objetivoGeneral)}
-            className={`${baseButtonClass} ${isTopicSelected(curriculum.objetivoGeneral) ? selectedClass : unselectedClass}`}
+      <nav className="flex-1 space-y-2 overflow-y-auto">
+        <button 
+          className={`${baseButtonClass} ${isTopicSelected(curriculum.objetivoGeneral) ? selectedClass : unselectedClass}`}
+          onClick={() => onTopicSelect(curriculum.objetivoGeneral)}
         >
-            {curriculum.objetivoGeneral.title}
+          {curriculum.objetivoGeneral.title}
         </button>
 
-        {curriculum.modules.map(module => {
-            const isExpanded = expandedModule === module.id;
-            return (
-                <div key={module.id}>
-                    <button 
-                        onClick={() => toggleModule(module.id)}
-                        className="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md"
-                        aria-expanded={isExpanded}
-                    >
-                        <span>{module.title}</span>
-                        <ChevronDownIcon 
-                            className={`w-4 h-4 transform transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'}`} 
-                        />
-                    </button>
-                    
-                    {isExpanded && (
-                        <ul className="pl-3 mt-1 space-y-1 border-l border-slate-200 dark:border-slate-700 ml-3">
-                            <li>
-                                <button
-                                    onClick={() => onTopicSelect(module.overview)}
-                                    className={`${baseButtonClass} ${isTopicSelected(module.overview) ? selectedClass : unselectedClass}`}
-                                >
-                                    {t('moduleOverview')}
-                                </button>
-                            </li>
-                            {module.conferences.map(topic => (
-                                <li key={topic.id}>
-                                    <button
-                                        onClick={() => onTopicSelect(topic)}
-                                        className={`${baseButtonClass} ${isTopicSelected(topic) ? selectedClass : unselectedClass}`}
-                                    >
-                                        {topic.title}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-            )
-        })}
+        {curriculum.modules.map(module => (
+          <div key={module.id}>
+            <button 
+              onClick={() => toggleModule(module.id)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800"
+            >
+              <span>{module.title}</span>
+              <ChevronDownIcon className={`w-4 h-4 transition-transform ${expandedModule === module.id ? 'rotate-180' : ''}`} />
+            </button>
+            {expandedModule === module.id && (
+              <div className="pl-4 mt-1 space-y-1">
+                <button
+                    className={`${baseButtonClass} ${isTopicSelected(module.overview) ? selectedClass : unselectedClass}`}
+                    onClick={() => onTopicSelect(module.overview)}
+                >
+                    {t('moduleOverview')}
+                </button>
+                {module.conferences.map(conf => (
+                  <button 
+                    key={conf.id}
+                    className={`${baseButtonClass} ${isTopicSelected(conf) ? selectedClass : unselectedClass}`}
+                    onClick={() => onTopicSelect(conf)}
+                  >
+                    {conf.title}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+
+        <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700 space-y-2">
+            <button
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${isTopicSelected(curriculum.evaluations) ? selectedClass : unselectedClass}`}
+                onClick={() => onTopicSelect(curriculum.evaluations)}
+            >
+                <DocumentChartBarIcon className="w-5 h-5" />
+                <span>{t('evaluationsTitle')}</span>
+            </button>
+
+            <button
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${isTopicSelected(curriculum.bibliography) ? selectedClass : unselectedClass}`}
+                onClick={() => onTopicSelect(curriculum.bibliography)}
+            >
+                <BookOpenIcon className="w-5 h-5" />
+                <span>{t('bibliographyTitle')}</span>
+            </button>
+        </div>
       </nav>
     </aside>
   );

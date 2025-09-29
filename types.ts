@@ -1,3 +1,5 @@
+// FIX: Import React to resolve namespace errors for React types.
+import React from 'react';
 // FIX: Changed import for Session and User to '@supabase/gotrue-js' to resolve module export errors.
 import type { Session, User } from '@supabase/gotrue-js';
 
@@ -19,8 +21,24 @@ export interface FileItem {
   description: string[];
 }
 
+export interface EvaluationCardData {
+    lang: Language;
+    title: string;
+    description: string;
+    buttonText: string;
+    url: string;
+}
+
+export interface BibliographyCardData {
+    type: 'pdf' | 'link';
+    title: string;
+    description: string;
+    buttonText: string;
+    url: string;
+}
+
 export interface ContentPart {
-  type: 'heading' | 'paragraph' | 'code' | 'list' | 'alert' | 'subtitle' | 'image' | 'twoColumn' | 'featureCard' | 'callout' | 'divider' | 'quiz' | 'fileStructure' | 'componentGrid' | 'assignment';
+  type: 'heading' | 'paragraph' | 'code' | 'list' | 'alert' | 'subtitle' | 'image' | 'twoColumn' | 'featureCard' | 'callout' | 'divider' | 'quiz' | 'fileStructure' | 'componentGrid' | 'assignment' | 'evaluationCards' | 'bibliographyCards';
   text?: string;
   id?: string; // For anchor links to subtitles
   code?: string;
@@ -49,6 +67,8 @@ export interface ContentPart {
   // Assignment properties
   assignmentId?: string;
   description?: string[];
+  evaluationCards?: EvaluationCardData[];
+  bibliographyCards?: BibliographyCardData[];
 }
 
 export interface CurriculumTopic {
@@ -58,7 +78,7 @@ export interface CurriculumTopic {
 }
 
 export interface CurriculumModule {
-    id: string;
+    id:string;
     title: string;
     overview: CurriculumTopic;
     conferences: CurriculumTopic[];
